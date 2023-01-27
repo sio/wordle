@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/sio/wordle"
 	"github.com/sio/wordle/freq"
@@ -31,6 +32,8 @@ func main() {
 	}
 	baseline := dict.ScoreString(base...)
 	fmt.Printf("Baseline for %v is %.1f%%\n\n", base, baseline*100)
+
+	dict.Search(3, baseline)
 }
 
 type dictionary struct {
@@ -55,7 +58,61 @@ func (d *dictionary) ScoreString(words ...string) freq.Frequency {
 	return d.freq.Score(data...)
 }
 
+func (d *dictionary) Score(words ...wordle.Word) freq.Frequency {
+	return d.freq.Score(words...)
+}
+
+type searchResult struct {
+	words []wordle.Word
+	score freq.Frequency
+	dict  *dictionary
+}
+
+func (r *searchResult) Append(word wordle.Word) {
+	r.words = append(r.words, word)
+	r.score = r.dict.Score(r.words...)
+}
+
+func (r *searchResult) Clear() {
+	r.words = r.words[:0]
+	r.score = 0
+}
+
+func (r *searchResult) String() string {
+	var builder strings.Builder
+	builder.WriteString("[")
+	for _, word := range r.words {
+		builder.WriteString(word.String())
+		builder.WriteRune(' ')
+	}
+	builder.WriteString(fmt.Sprintf("%.1f]", r.score*100))
+	return builder.String()
+}
+
 // Search for starting words that score better than a baseline
-func search(words []wordle.Word, baseline freq.Frequency, batchSize int) [][]wordle.Word {
-	return [][]wordle.Word{}
+func (d *dictionary) Search(batchSize int, baseline freq.Frequency) { //[]wordle.Word {
+	result := &searchResult{
+		words: make([]wordle.Word, 0, batchSize),
+		dict:  d,
+	}
+	for i := 0; i < len(*d.words); i++ {
+		word := (*d.words)[i]
+		score := d.freq.Score(word)
+		if result.score+score*freq.Frequency(batchSize-len(result.words)) < baseline {
+			fmt.Println("short-circuit")
+			break
+		}
+		result.Append(word)
+		if len(result.words) < batchSize {
+			continue
+		}
+		fmt.Println(result)
+		if result.score > baseline {
+			fmt.Println(result)
+			return
+		} else {
+			result.Clear()
+		}
+	}
+	//return [][]wordle.Word{}
 }
