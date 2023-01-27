@@ -8,36 +8,54 @@ import (
 	"github.com/sio/wordle/freq"
 )
 
+const outputSize = 10
+
 func main() {
-	words := wordle.RussianWords()
+	var dict dictionary
+	dict.Fill(wordle.RussianWords())
 
-	var chars freq.CharFreq
-	chars.Update(words)
-
-	sort.SliceStable(words, func(i, j int) bool {
-		return chars.Score(words[i]) > chars.Score(words[j])
-	})
-
-	const outputSize = 10
-
+	words := *dict.words
 	fmt.Printf("Dictionary contains %d words\n\n", len(words))
-
 	fmt.Println("Highest scoring single words:")
 	for i := 0; i < len(words) && i < outputSize; i++ {
 		fmt.Println(" ", words[i].String())
 	}
 
-	fmt.Printf("\nCharacter frequency table:\n%v\n\n", &chars)
+	fmt.Printf("\nCharacter frequency table:\n%v\n\n", dict.freq)
 
-	var input = [...]string{
+	// Establish a baseline for further comparison
+	var base = []string{
 		"мания",
 		"укроп",
 		"бювет",
 	}
-	test := make([]wordle.Word, len(input))
-	for i := 0; i < len(test); i++ {
-		test[i].Parse(input[i])
+	baseline := dict.ScoreString(base...)
+	fmt.Printf("Baseline for %v is %.1f%%\n\n", base, baseline*100)
+}
+
+type dictionary struct {
+	words *[]wordle.Word
+	freq  *freq.CharFreq
+}
+
+func (d *dictionary) Fill(words *[]wordle.Word) {
+	d.words = words
+	d.freq = &freq.CharFreq{}
+	d.freq.Update(words)
+	sort.SliceStable(*words, func(i, j int) bool {
+		return d.freq.Score((*words)[i]) > d.freq.Score((*words)[j])
+	})
+}
+
+func (d *dictionary) ScoreString(words ...string) freq.Frequency {
+	data := make([]wordle.Word, len(words))
+	for i := 0; i < len(words); i++ {
+		data[i].Parse(words[i])
 	}
-	baseline := chars.Score(test...)
-	fmt.Printf("Baseline for %v is %.1f%%\n\n", input, baseline*100)
+	return d.freq.Score(data...)
+}
+
+// Search for starting words that score better than a baseline
+func search(words []wordle.Word, baseline freq.Frequency, batchSize int) [][]wordle.Word {
+	return [][]wordle.Word{}
 }

@@ -32,13 +32,13 @@ func (cf *CharFreq) Score(words ...wordle.Word) Frequency {
 	return score
 }
 
-func (cf *CharFreq) Update(words []wordle.Word) {
+func (cf *CharFreq) Update(words *[]wordle.Word) {
 	*cf = make(CharFreq)
 
 	var total Frequency
 	var word wordle.Word
 	var char rune
-	for _, word = range words {
+	for _, word = range *words {
 		for _, char = range word {
 			(*cf)[char]++
 			total++

@@ -32,7 +32,7 @@ func TestRussian(t *testing.T) {
 	words := wordle.RussianWords()
 	valid := regexp.MustCompile(fmt.Sprintf(`^[ЁёА-я]{%d}$`, wordle.WordSize))
 	var failures int
-	for _, word := range words {
+	for _, word := range *words {
 		if !valid.MatchString(word.String()) {
 			t.Errorf("failed regex validation: %s %v", word.String(), word)
 			failures++

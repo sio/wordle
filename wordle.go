@@ -30,7 +30,7 @@ func (w *Word) Parse(input string) error {
 
 type void struct{}
 
-func RussianWords() []Word {
+func RussianWords() *[]Word {
 	const dataDir = "data"
 	fs := RussianWordLists
 
@@ -66,5 +66,5 @@ func RussianWords() []Word {
 		output[i] = word
 		i++
 	}
-	return output
+	return &output
 }
