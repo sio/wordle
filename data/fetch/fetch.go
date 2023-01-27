@@ -27,7 +27,8 @@ func main() {
 		var count uint
 		for iter.Next() {
 			word := strings.TrimSpace(iter.Value())
-			if len(word) != wordle.WordSize {
+			length := len([]rune(word))
+			if length != wordle.WordSize {
 				continue
 			}
 			for _, char := range word {
