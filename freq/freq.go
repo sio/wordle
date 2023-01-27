@@ -1,8 +1,6 @@
 package freq
 
 import (
-	"fmt"
-
 	"github.com/sio/wordle"
 )
 
@@ -10,7 +8,7 @@ type Frequency float32
 
 type CharFreq map[rune]Frequency
 
-func (cf *CharFreq) Score(words ...wordle.Word) (Frequency, error) {
+func (cf *CharFreq) Score(words ...wordle.Word) Frequency {
 	seen := make(map[rune]bool)
 	var score, current Frequency
 	var ok bool
@@ -22,12 +20,12 @@ func (cf *CharFreq) Score(words ...wordle.Word) (Frequency, error) {
 			seen[char] = true
 			current, ok = (*cf)[char]
 			if !ok {
-				return 0, fmt.Errorf("character score not available: %c", char)
+				return 0
 			}
 			score += current
 		}
 	}
-	return score, nil
+	return score
 }
 
 func (cf *CharFreq) Update(words []wordle.Word) {
