@@ -43,6 +43,7 @@ func main() {
 			if skip {
 				continue
 			}
+			word = strings.ReplaceAll(word, "ё", "е") // Ё is not useful in word games
 			_, err = fmt.Fprintln(out, word)
 			if err != nil {
 				log.Fatalf("writing to %s failed: %v", filename, err)
