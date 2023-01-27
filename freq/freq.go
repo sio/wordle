@@ -2,6 +2,10 @@ package freq
 
 import (
 	"github.com/sio/wordle"
+
+	"fmt"
+	"sort"
+	"strings"
 )
 
 type Frequency float32
@@ -43,4 +47,21 @@ func (cf *CharFreq) Update(words []wordle.Word) {
 	for char := range *cf {
 		(*cf)[char] /= total
 	}
+}
+
+func (cf *CharFreq) String() string {
+	chars := make([]rune, len(*cf))
+	var index int
+	for char := range *cf {
+		chars[index] = char
+		index++
+	}
+	sort.SliceStable(chars, func(i, j int) bool {
+		return (*cf)[chars[i]] > (*cf)[chars[j]]
+	})
+	output := make([]string, len(chars))
+	for i := 0; i < len(chars); i++ {
+		output[i] = fmt.Sprintf("%c:%.1f", chars[i], (*cf)[chars[i]]*100)
+	}
+	return fmt.Sprintf("[%s]", strings.Join(output, ", "))
 }
