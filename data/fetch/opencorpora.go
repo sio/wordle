@@ -29,15 +29,23 @@ func (i *opencorporaIterator) init() {
 	i.scanner = bufio.NewScanner(i.reader)
 }
 
+// Regex to find nouns in Opencorpora dictionary dump
 var opencorporaRegex = regexp.MustCompile(`^(\S+)\s+NOUN,.*sing,nomn$`)
+
+// Noun categories to drop <http://www.opencorpora.org/dict.php?act=gram>
+var opencorporaDrop = regexp.MustCompile(`Abbr|Dist|Erro|Geox|Infr|Init|Name|Orgn|Patr|Slng|Surn`)
 
 func (i *opencorporaIterator) Next() bool {
 	if i.reader == nil {
 		i.init()
 	}
 	for i.scanner.Scan() {
-		match := opencorporaRegex.FindStringSubmatch(i.scanner.Text())
+		line := i.scanner.Text()
+		match := opencorporaRegex.FindStringSubmatch(line)
 		if len(match) < 2 {
+			continue
+		}
+		if opencorporaDrop.MatchString(line) {
 			continue
 		}
 		i.value = strings.ToLower(match[1])
