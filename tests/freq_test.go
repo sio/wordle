@@ -17,7 +17,8 @@ func TestFreq(t *testing.T) {
 	for _, f = range chars {
 		total += f
 	}
-	if total != 1 {
+	delta := total - 1
+	if delta > 1e-6 || delta < -1e-6 {
 		t.Errorf("sum of character probabilities is not 1.0: %v", total)
 	}
 }
