@@ -14,8 +14,10 @@ import (
 
 func main() {
 	sources := map[string]fetchIterator{
-		"harrix.txt": &harrixIterator{},
+		"harrix.txt":      &harrixIterator{},
+		"opencorpora.txt": &opencorporaIterator{},
 	}
+	log.Print("fetching word lists")
 	for filename, iter := range sources {
 		out, err := os.Create(filename)
 		if err != nil {
