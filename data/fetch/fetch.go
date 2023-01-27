@@ -31,10 +31,15 @@ func main() {
 			if length != wordle.WordSize {
 				continue
 			}
+			var skip bool
 			for _, char := range word {
 				if !unicode.IsLetter(char) || !unicode.IsLower(char) {
-					continue
+					skip = true
+					break
 				}
+			}
+			if skip {
+				continue
 			}
 			_, err = fmt.Fprintln(out, word)
 			if err != nil {
