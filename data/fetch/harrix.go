@@ -12,7 +12,6 @@ const harrixURL = "https://github.com/Harrix/Russian-Nouns/raw/main/dist/russian
 type harrixIterator struct {
 	reader  io.ReadCloser
 	scanner *bufio.Scanner
-	value   string
 }
 
 func (h *harrixIterator) init() {
@@ -29,7 +28,6 @@ func (h *harrixIterator) Next() bool {
 		h.init()
 	}
 	if h.scanner.Scan() {
-		h.value = h.scanner.Text()
 		return true
 	}
 	if err := h.scanner.Err(); err != nil {
@@ -39,7 +37,7 @@ func (h *harrixIterator) Next() bool {
 }
 
 func (h *harrixIterator) Value() string {
-	return h.value
+	return h.scanner.Text()
 }
 
 func (h *harrixIterator) Close() error {

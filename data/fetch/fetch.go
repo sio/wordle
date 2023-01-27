@@ -5,9 +5,9 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"unicode"
-	"os"
 
 	"github.com/sio/wordle"
 )
