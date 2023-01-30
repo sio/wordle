@@ -35,6 +35,7 @@ func main() {
 	baseline := dict.ScoreString(base...)
 	fmt.Printf("Baseline for %v is %.1f%%\n\n", base, baseline*100)
 
+	fmt.Println("Better start combinations:")
 	dict.Search(3, baseline)
 }
 
@@ -75,16 +76,25 @@ type searchState struct {
 	wg       *sync.WaitGroup
 }
 
-func (r searchState) Append(word wordle.Word) searchState {
-	if r.words == nil {
-		r.words = make([]wordle.Word, 0, r.size)
+func (r *searchState) Append(word wordle.Word) searchState {
+	next := searchState{
+		dict:     r.dict,
+		cursor:   r.cursor,
+		baseline: r.baseline,
+		size:     r.size,
+		words:    make([]wordle.Word, len(r.words), r.size),
+		results:  r.results,
+		wg:       r.wg,
 	}
-	r.words = append(r.words, word)
-	r.score = r.dict.Score(r.words...)
-	if r.score > *r.baseline {
-		*r.baseline = r.score
+	for index, w := range r.words {
+		next.words[index] = w
 	}
-	return r
+	next.words = append(next.words, word)
+	next.score = next.dict.Score(next.words...)
+	if next.score > *next.baseline {
+		*next.baseline = next.score
+	}
+	return next
 }
 
 func (r *searchState) String() string {
