@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/sio/wordle"
 	"github.com/sio/wordle/freq"
@@ -62,23 +64,30 @@ func (d *dictionary) Score(words ...wordle.Word) freq.Frequency {
 	return d.freq.Score(words...)
 }
 
-type searchResult struct {
-	words []wordle.Word
-	score freq.Frequency
-	dict  *dictionary
+type searchState struct {
+	dict     *dictionary
+	cursor   int
+	baseline *freq.Frequency
+	size     int
+	words    []wordle.Word
+	score    freq.Frequency
+	results  chan<- searchState
+	wg       *sync.WaitGroup
 }
 
-func (r *searchResult) Append(word wordle.Word) {
+func (r searchState) Append(word wordle.Word) searchState {
+	if r.words == nil {
+		r.words = make([]wordle.Word, 0, r.size)
+	}
 	r.words = append(r.words, word)
 	r.score = r.dict.Score(r.words...)
+	if r.score > *r.baseline {
+		*r.baseline = r.score
+	}
+	return r
 }
 
-func (r *searchResult) Clear() {
-	r.words = r.words[:0]
-	r.score = 0
-}
-
-func (r *searchResult) String() string {
+func (r *searchState) String() string {
 	var builder strings.Builder
 	builder.WriteString("[")
 	for _, word := range r.words {
@@ -90,29 +99,45 @@ func (r *searchResult) String() string {
 }
 
 // Search for starting words that score better than a baseline
-func (d *dictionary) Search(batchSize int, baseline freq.Frequency) { //[]wordle.Word {
-	result := &searchResult{
-		words: make([]wordle.Word, 0, batchSize),
-		dict:  d,
+func (d *dictionary) Search(size int, baseline freq.Frequency) { //[]wordle.Word {
+	results := make(chan searchState)
+	wg := &sync.WaitGroup{}
+	go d.recursiveSearch(searchState{
+		dict:     d,
+		size:     size,
+		baseline: &baseline,
+		results:  results,
+		wg:       wg,
+	})
+	go func() {
+		for {
+			r := <-results
+			fmt.Println(&r)
+		}
+	}()
+	time.Sleep(1)
+	wg.Wait()
+	close(results)
+	fmt.Println("Done.")
+}
+
+func (d *dictionary) recursiveSearch(search searchState) {
+	search.wg.Add(1)
+	defer search.wg.Done()
+
+	if len(search.words) == search.size {
+		if search.score < *search.baseline {
+			return
+		}
+		search.results <- search
+		return
 	}
-	for i := 0; i < len(*d.words); i++ {
-		word := (*d.words)[i]
+	for ; search.cursor < len(*d.words); search.cursor++ {
+		word := (*d.words)[search.cursor]
 		score := d.freq.Score(word)
-		if result.score+score*freq.Frequency(batchSize-len(result.words)) < baseline {
-			fmt.Println("short-circuit")
+		if search.score+score*freq.Frequency(search.size-len(search.words)) < *search.baseline {
 			break
 		}
-		result.Append(word)
-		if len(result.words) < batchSize {
-			continue
-		}
-		fmt.Println(result)
-		if result.score > baseline {
-			fmt.Println(result)
-			return
-		} else {
-			result.Clear()
-		}
+		d.recursiveSearch(search.Append(word))
 	}
-	//return [][]wordle.Word{}
 }
