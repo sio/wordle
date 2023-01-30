@@ -1,6 +1,10 @@
 GO?=go
 GIT?=git
 
+.PHONY: freq
+freq:
+	$(GO) run ./freq
+
 export GOTEST_ARGS
 
 .PHONY: todo
