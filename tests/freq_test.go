@@ -4,16 +4,15 @@ import (
 	"testing"
 
 	"github.com/sio/wordle"
-	"github.com/sio/wordle/freq"
 )
 
 func TestFreq(t *testing.T) {
 	words := wordle.RussianWords()
 
-	var chars freq.CharFreq
+	var chars wordle.CharFreq
 	chars.Update(words)
 
-	var total, f freq.Frequency
+	var total, f wordle.Frequency
 	for _, f = range chars {
 		total += f
 	}

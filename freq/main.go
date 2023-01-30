@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/sio/wordle"
-	"github.com/sio/wordle/freq"
 )
 
 const outputSize = 10
@@ -41,19 +40,19 @@ func main() {
 
 type dictionary struct {
 	words *[]wordle.Word
-	freq  *freq.CharFreq
+	freq  *wordle.CharFreq
 }
 
 func (d *dictionary) Fill(words *[]wordle.Word) {
 	d.words = words
-	d.freq = &freq.CharFreq{}
+	d.freq = &wordle.CharFreq{}
 	d.freq.Update(words)
 	sort.SliceStable(*words, func(i, j int) bool {
 		return d.freq.Score((*words)[i]) > d.freq.Score((*words)[j])
 	})
 }
 
-func (d *dictionary) ScoreString(words ...string) freq.Frequency {
+func (d *dictionary) ScoreString(words ...string) wordle.Frequency {
 	data := make([]wordle.Word, len(words))
 	for i := 0; i < len(words); i++ {
 		data[i].Parse(words[i])
@@ -61,17 +60,17 @@ func (d *dictionary) ScoreString(words ...string) freq.Frequency {
 	return d.freq.Score(data...)
 }
 
-func (d *dictionary) Score(words ...wordle.Word) freq.Frequency {
+func (d *dictionary) Score(words ...wordle.Word) wordle.Frequency {
 	return d.freq.Score(words...)
 }
 
 type searchState struct {
 	dict     *dictionary
 	cursor   int
-	baseline *freq.Frequency
+	baseline *wordle.Frequency
 	size     int
 	words    []wordle.Word
-	score    freq.Frequency
+	score    wordle.Frequency
 	results  chan<- searchState
 	wg       *sync.WaitGroup
 }
@@ -109,7 +108,7 @@ func (r *searchState) String() string {
 }
 
 // Search for starting words that score better than a baseline
-func (d *dictionary) Search(size int, baseline freq.Frequency) { //[]wordle.Word {
+func (d *dictionary) Search(size int, baseline wordle.Frequency) { //[]wordle.Word {
 	results := make(chan searchState)
 	wg := &sync.WaitGroup{}
 	go d.recursiveSearch(searchState{
@@ -145,7 +144,7 @@ func (d *dictionary) recursiveSearch(search searchState) {
 	for ; search.cursor < len(*d.words); search.cursor++ {
 		word := (*d.words)[search.cursor]
 		score := d.freq.Score(word)
-		if search.score+score*freq.Frequency(search.size-len(search.words)) < *search.baseline {
+		if search.score+score*wordle.Frequency(search.size-len(search.words)) < *search.baseline {
 			break
 		}
 		d.recursiveSearch(search.Append(word))

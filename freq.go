@@ -1,8 +1,6 @@
-package freq
+package wordle
 
 import (
-	"github.com/sio/wordle"
-
 	"fmt"
 	"sort"
 	"strings"
@@ -12,7 +10,7 @@ type Frequency float32
 
 type CharFreq map[rune]Frequency
 
-func (cf *CharFreq) Score(words ...wordle.Word) Frequency {
+func (cf *CharFreq) Score(words ...Word) Frequency {
 	seen := make(map[rune]bool)
 	var score, current Frequency
 	var ok bool
@@ -32,11 +30,11 @@ func (cf *CharFreq) Score(words ...wordle.Word) Frequency {
 	return score
 }
 
-func (cf *CharFreq) Update(words *[]wordle.Word) {
+func (cf *CharFreq) Update(words *[]Word) {
 	*cf = make(CharFreq)
 
 	var total Frequency
-	var word wordle.Word
+	var word Word
 	var char rune
 	for _, word = range *words {
 		for _, char = range word {
