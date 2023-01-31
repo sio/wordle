@@ -30,7 +30,7 @@ func TestWord(t *testing.T) {
 
 func TestRussian(t *testing.T) {
 	words := wordle.RussianWords()
-	valid := regexp.MustCompile(fmt.Sprintf(`^[ЁёА-я]{%d}$`, wordle.WordSize))
+	valid := regexp.MustCompile(fmt.Sprintf(`^[а-я]{%d}$`, wordle.WordSize))
 	var failures int
 	for _, word := range *words {
 		if !valid.MatchString(word.String()) {
