@@ -8,6 +8,10 @@ import (
 
 type Frequency float32
 
+func (value Frequency) String() string {
+	return fmt.Sprintf("%.1f", value*100)
+}
+
 type CharFreq map[rune]Frequency
 
 func (cf *CharFreq) Score(words ...Word) Frequency {
@@ -59,7 +63,7 @@ func (cf *CharFreq) String() string {
 	})
 	output := make([]string, len(chars))
 	for i := 0; i < len(chars); i++ {
-		output[i] = fmt.Sprintf("%c:%.1f", chars[i], (*cf)[chars[i]]*100)
+		output[i] = fmt.Sprintf("%c:%v", chars[i], (*cf)[chars[i]])
 	}
 	return fmt.Sprintf("[%s]", strings.Join(output, ", "))
 }

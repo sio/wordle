@@ -8,7 +8,7 @@ import (
 
 type Word [WordSize]rune
 
-func (w *Word) String() string {
+func (w Word) String() string {
 	return string(w[:])
 }
 
@@ -26,6 +26,15 @@ func (w *Word) Parse(input string) error {
 		return fmt.Errorf("word too short: %s (%d characters instead of %d)", input, len([]rune(input)), WordSize)
 	}
 	return nil
+}
+
+func (w *Word) Contains(char rune) bool {
+	for _, c := range *w {
+		if c == char {
+			return true
+		}
+	}
+	return false
 }
 
 type void struct{}

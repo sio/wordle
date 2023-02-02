@@ -32,10 +32,15 @@ func main() {
 		"бювет",
 	}
 	baseline := dict.ScoreString(base...)
-	fmt.Printf("Baseline for %v is %.1f%%\n\n", base, baseline*100)
+	fmt.Printf("Baseline for %v is %v\n\n", base, baseline)
 
-	fmt.Println("Better start combinations:")
-	dict.Search(3, baseline)
+	fmt.Println("Highest scoring start combinations:")
+	for _, size := range []int{2, 3, 4} {
+		fmt.Println("  Number of words:", size)
+		for ws := range dict.SearchTopScore(size) {
+			fmt.Println("   ", ws, dict.Score(ws...))
+		}
+	}
 }
 
 type dictionary struct {
@@ -103,12 +108,12 @@ func (r *searchState) String() string {
 		builder.WriteString(word.String())
 		builder.WriteRune(' ')
 	}
-	builder.WriteString(fmt.Sprintf("%.1f]", r.score*100))
+	builder.WriteString(fmt.Sprintf("%v]", r.score))
 	return builder.String()
 }
 
-// Search for starting words that score better than a baseline
-func (d *dictionary) Search(size int, baseline wordle.Frequency) { //[]wordle.Word {
+// Search all word combinations for starting words that score better than a baseline
+func (d *dictionary) SearchFull(size int, baseline wordle.Frequency) { //[]wordle.Word {
 	results := make(chan searchState)
 	wg := &sync.WaitGroup{}
 	go d.recursiveSearch(searchState{
