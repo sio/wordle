@@ -66,7 +66,7 @@ func recursiveTopScoreSearch(results chan<- []wordle.Word, search *topScoreSearc
 		delta := search.target - ceiling
 		const threshold = 1e-7
 		if delta > threshold {
-			continue
+			break
 		}
 		err := search.pool.Add()
 		if err == nil { // spawn new worker goroutine
