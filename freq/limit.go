@@ -10,18 +10,18 @@ type void struct{}
 
 func NewGoroutinePool(size int) *GoroutinePool {
 	return &GoroutinePool{
-		size: uint32(size),
+		maxsize: uint32(size),
 	}
 }
 
 type GoroutinePool struct {
-	count uint32
-	size  uint32
-	wg    sync.WaitGroup
+	count   uint32
+	maxsize uint32
+	wg      sync.WaitGroup
 }
 
 func (pool *GoroutinePool) Add() error {
-	if pool.count >= pool.size {
+	if pool.Size() >= pool.maxsize {
 		return fmt.Errorf("goroutine pool is currently full")
 	}
 	atomic.AddUint32(&pool.count, 1)
@@ -35,7 +35,7 @@ func (pool *GoroutinePool) Done() {
 }
 
 func (pool *GoroutinePool) Size() uint32 {
-	return pool.count
+	return atomic.LoadUint32(&pool.count)
 }
 
 func (pool *GoroutinePool) Wait() {
