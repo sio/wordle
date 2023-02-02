@@ -3,9 +3,6 @@ package main
 import (
 	"fmt"
 	"sort"
-	"strings"
-	"sync"
-	"time"
 
 	"github.com/sio/wordle"
 )
@@ -67,91 +64,4 @@ func (d *dictionary) ScoreString(words ...string) wordle.Frequency {
 
 func (d *dictionary) Score(words ...wordle.Word) wordle.Frequency {
 	return d.freq.Score(words...)
-}
-
-type searchState struct {
-	dict     *dictionary
-	cursor   int
-	baseline *wordle.Frequency
-	size     int
-	words    []wordle.Word
-	score    wordle.Frequency
-	results  chan<- searchState
-	wg       *sync.WaitGroup
-}
-
-func (r *searchState) Append(word wordle.Word) searchState {
-	next := searchState{
-		dict:     r.dict,
-		cursor:   r.cursor,
-		baseline: r.baseline,
-		size:     r.size,
-		words:    make([]wordle.Word, len(r.words), r.size),
-		results:  r.results,
-		wg:       r.wg,
-	}
-	for index, w := range r.words {
-		next.words[index] = w
-	}
-	next.words = append(next.words, word)
-	next.score = next.dict.Score(next.words...)
-	if next.score > *next.baseline {
-		*next.baseline = next.score
-	}
-	return next
-}
-
-func (r *searchState) String() string {
-	var builder strings.Builder
-	builder.WriteString("[")
-	for _, word := range r.words {
-		builder.WriteString(word.String())
-		builder.WriteRune(' ')
-	}
-	builder.WriteString(fmt.Sprintf("%v]", r.score))
-	return builder.String()
-}
-
-// Search all word combinations for starting words that score better than a baseline
-func (d *dictionary) SearchFull(size int, baseline wordle.Frequency) { //[]wordle.Word {
-	results := make(chan searchState)
-	wg := &sync.WaitGroup{}
-	go d.recursiveSearch(searchState{
-		dict:     d,
-		size:     size,
-		baseline: &baseline,
-		results:  results,
-		wg:       wg,
-	})
-	go func() {
-		for {
-			r := <-results
-			fmt.Println(&r)
-		}
-	}()
-	time.Sleep(1)
-	wg.Wait()
-	close(results)
-	fmt.Println("Done.")
-}
-
-func (d *dictionary) recursiveSearch(search searchState) {
-	search.wg.Add(1)
-	defer search.wg.Done()
-
-	if len(search.words) == search.size {
-		if search.score < *search.baseline {
-			return
-		}
-		search.results <- search
-		return
-	}
-	for ; search.cursor < len(*d.words); search.cursor++ {
-		word := (*d.words)[search.cursor]
-		score := d.freq.Score(word)
-		if search.score+score*wordle.Frequency(search.size-len(search.words)) < *search.baseline {
-			break
-		}
-		d.recursiveSearch(search.Append(word))
-	}
 }
