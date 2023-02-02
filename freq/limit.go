@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 )
@@ -9,29 +10,31 @@ type void struct{}
 
 func NewGoroutinePool(size int) *GoroutinePool {
 	return &GoroutinePool{
-		channel: make(chan void, size),
+		size: uint32(size),
 	}
 }
 
 type GoroutinePool struct {
-	channel chan void
-	count   uint64
-	wg      sync.WaitGroup
+	count uint32
+	size  uint32
+	wg    sync.WaitGroup
 }
 
-func (pool *GoroutinePool) Add() {
-	atomic.AddUint64(&pool.count, 1)
+func (pool *GoroutinePool) Add() error {
+	if pool.count >= pool.size {
+		return fmt.Errorf("goroutine pool is currently full")
+	}
+	atomic.AddUint32(&pool.count, 1)
 	pool.wg.Add(1)
-	pool.channel <- void{}
+	return nil
 }
 
 func (pool *GoroutinePool) Done() {
-	<-pool.channel
 	pool.wg.Done()
-	atomic.AddUint64(&pool.count, ^uint64(0))
+	atomic.AddUint32(&pool.count, ^uint32(0))
 }
 
-func (pool *GoroutinePool) Size() uint64 {
+func (pool *GoroutinePool) Size() uint32 {
 	return pool.count
 }
 

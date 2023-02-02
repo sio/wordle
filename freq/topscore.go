@@ -1,6 +1,7 @@
 package main
 
 import (
+	"runtime"
 	"sort"
 	"time"
 
@@ -31,10 +32,13 @@ func (dict *dictionary) SearchTopScore(size int) chan []wordle.Word {
 		keep:   keep,
 		dict:   dict,
 		result: make([]wordle.Word, 0, size),
-		pool:   NewGoroutinePool(5),
+		pool:   NewGoroutinePool(runtime.NumCPU() + 1),
 	}
 	results := make(chan []wordle.Word)
-	go recursiveTopScoreSearch(results, search)
+
+	search.pool.Add() // register the first goroutine
+	go recursiveTopScoreSearch(results, search, true)
+
 	go func() {
 		time.Sleep(1 * time.Second)
 		search.pool.Wait()
@@ -43,9 +47,10 @@ func (dict *dictionary) SearchTopScore(size int) chan []wordle.Word {
 	return results
 }
 
-func recursiveTopScoreSearch(results chan<- []wordle.Word, search *topScoreSearchState) {
-	search.pool.Add()
-	defer search.pool.Done()
+func recursiveTopScoreSearch(results chan<- []wordle.Word, search *topScoreSearchState, goro bool) {
+	if goro {
+		defer search.pool.Done()
+	}
 
 	if len(search.result) == cap(search.result) {
 		results <- search.result
@@ -63,7 +68,12 @@ func recursiveTopScoreSearch(results chan<- []wordle.Word, search *topScoreSearc
 		if delta > threshold {
 			continue
 		}
-		recursiveTopScoreSearch(results, search.Append(word))
+		err := search.pool.Add()
+		if err == nil { // spawn new worker goroutine
+			go recursiveTopScoreSearch(results, search.Append(word), true)
+		} else { // not allowed to add a goroutine, continuing in the current one
+			recursiveTopScoreSearch(results, search.Append(word), false)
+		}
 	}
 }
 
